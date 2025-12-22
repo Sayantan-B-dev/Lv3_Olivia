@@ -75,20 +75,33 @@ function initSocketServer(httpServer) {
           return;
         }
 
-        console.log("📥 Saving user message...");
-        const [{ userMessage, userVector }] = await Promise.all([(
-          async () => {
-            const userMessage = await messageModel.create({
-              chat: payload.chat,
-              user: socket.user._id,
-              role: "user",
-              content: payload.content
-            });
+        // console.log("📥 Saving user message...");
+        // const [{ userMessage, userVector }] = await Promise.all([(
+        //   async () => {
+        //     const userMessage = await messageModel.create({
+        //       chat: payload.chat,
+        //       user: socket.user._id,
+        //       role: "user",
+        //       content: payload.content
+        //     });
 
-            const userVector = await generateVector(payload.content);
-            return { userMessage, userVector };
-          }
-        )()]);
+        //     const userVector = await generateVector(payload.content);
+        //     return { userMessage, userVector };
+        //   }
+        // )()]);
+        console.log("📌 Writing to DB...");
+        const userMessage = await messageModel.create({
+          chat: payload.chat,
+          user: socket.user._id,
+          role: "user",
+          content: payload.content
+        });
+        console.log("✔️ Saved user message:", userMessage._id);
+
+        console.log("🧠 Calling generateVector()...");
+        const userVector = await generateVector(payload.content);
+        console.log("✔️ Vector created.");
+
 
         console.log("📌 Updating chat activity timestamp...");
         await chatModel.findByIdAndUpdate(payload.chat, {
