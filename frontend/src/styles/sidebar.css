@@ -1,0 +1,394 @@
+.sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  color: white;
+  resize: horizontal;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  background: #111;
+  transition: width 0.1s ease, max-height 0.18s ease, padding 0.12s ease;
+  width: 100%;
+  max-width: var(--sidebar-width);
+  min-width: var(--sidebar-min);
+}
+
+/* Small screen: make sidebar full width, remove right gap and act like a top dropdown */
+@media (max-width: 800px){
+  .sidebar{
+    position: relative;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: auto !important;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 12px 14px;
+  }
+
+  /* Hide chat list and footer by default to mimic a collapsed header */
+  .sidebar .chat-list,
+  .sidebar .logout,
+  .sidebar .sidebar-footer{
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform-origin: top;
+    transition: max-height 0.22s ease, opacity 0.18s ease;
+  }
+
+  /* Show content when sidebar receives focus (via buttons) or when hovered (desktop fallback) */
+  .sidebar:focus-within .chat-list,
+  .sidebar:focus-within .logout,
+  .sidebar:focus-within .sidebar-footer,
+  .sidebar:hover .chat-list,
+  .sidebar:hover .logout,
+  .sidebar:hover .sidebar-footer{
+    max-height: 60vh;
+    opacity: 1;
+  }
+
+  /* Make the title look like a dropdown trigger */
+  .sidebar-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .sidebar-toggle{
+    display:none; /* hidden on desktop */
+  }
+
+  /* Ensure chat items don't force horizontal scroll */
+  .chat-list{
+    padding-right: 8px;
+  }
+
+  /* Toggle visible on small screens */
+  @media (max-width: 800px){
+    .sidebar-toggle{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #dcdcdc;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 10px 12px;
+      border-radius: 6px;
+      width: 100%;
+      text-align: left;
+    }
+
+    /* place under the New Chat button */
+    .new-chat-button + .sidebar-toggle{
+      margin-top: 10px;
+    }
+
+    /* Ensure toggle is always hidden on wider screens */
+    @media (min-width: 801px) {
+      .sidebar-toggle{ display: none !important; }
+    }
+
+    /* When explicitly opened via class, show hidden content */
+    .sidebar.is-open .chat-list,
+    .sidebar.is-open .logout,
+    .sidebar.is-open .sidebar-footer{
+      max-height: 60vh;
+      opacity: 1;
+    }
+
+    .sidebar-resizer{ display:none; }
+  }
+}
+
+/* Reduce padding on small screens */
+@media (max-width: 800px){
+  .sidebar{
+    padding: 12px;
+  }
+  .chat-list{
+    max-height: 30vh;
+  }
+
+  /* Reduce logout top spacing on mobile so it sits after content (was creating a large gap) */
+  .logout{
+    width:fit-content ;
+    margin-top: 12px !important; /* previously auto on desktop */
+  }
+}
+
+/* draggable resize bar */
+.sidebar-resizer {
+  width: 4px;
+  cursor: ew-resize;
+  background: rgba(255,255,255,0.05);
+  transition: background 0.15s ease;
+}
+
+.sidebar-resizer:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+
+.sidebar-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.nav-list {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nav-item {
+  padding: 10px 12px;
+  background: #222;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: #333;
+}
+
+.logout {
+  color: #ff5c5c;
+  font-weight: 500;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  cursor: pointer;
+  margin-top: auto; /* <-- anchor to bottom */
+}
+
+
+.logout:hover {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+
+.sidebar-footer {
+  opacity: 0.7;
+}
+
+.username {
+  display: inline-block;
+  position: relative;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: default;
+  line-height: 1.3;
+  padding-bottom: 4px;
+}
+
+/* email hidden by default */
+.username .email {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  color: #8a8a8a;
+  font-size: 13px;
+  margin: 0;
+  transition: all 0.25s ease;
+  transform: translateY(-3px);
+}
+
+/* reveal on hover */
+.username:hover .email {
+  opacity: 1;
+  max-height: 20px;
+  transform: translateY(0);
+}
+
+.chat-list {
+  margin-top: 15px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.new-chat-button {
+  width: 100%;
+  background: #1b1b1b;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #eaeaea;
+  padding: 12px 14px;
+  border-radius: 6px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.new-chat-button:hover {
+  background: #242424;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.new-chat-button:active {
+  transform: translateY(0px);
+  background: #2a2a2a;
+}
+
+.new-chat-button .plus {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-right: 6px;
+}
+
+
+.chat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 10px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.15s ease;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+}
+
+.chat-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.chat-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.chat-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.chat-title {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.3rem;
+  max-height: 2.6rem; /* limits to 2 lines */
+  overflow: hidden; /* hides extra */
+}
+
+
+.chat-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+}
+
+.icon {
+  font-size: 10px;
+  padding: 4px 5px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: 0.15s ease;
+}
+
+.icon:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.15);
+}
+
+.icon.delete:hover {
+  color: #ff5252;
+}
+
+.icon.edit:hover {
+  color: #4ea4ff;
+}
+.menu-btn {
+  font-size: 16px;
+  padding: 4px 6px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: 0.15s ease;
+}
+
+.menu-btn:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+/* Dropdown box */
+.menu-wrapper {
+  position: relative;
+  /* ensure dropdowns inside are above other layout elements */
+  z-index: 9999999;
+} 
+
+.menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 28px;
+  background: #000; /* fully opaque black */
+  border-radius: 6px;
+  padding: 6px 0;
+  border: 1px solid #000; /* match background to avoid translucency */
+  animation: fadeIn 0.15s ease;
+  z-index: 9999999; /* very high to avoid being hidden by other panels */
+  min-width: 140px; /* slightly larger for touch targets */
+  width: auto;
+  box-shadow: none;
+  opacity: 1;
+} 
+
+/* Mobile: center the action menu and make it fixed so it isn't covered by chat-area */
+@media (max-width: 800px) {
+  .menu-dropdown {
+    position: fixed;
+    left: 50%;
+    top: 16vh; /* slightly upper center */
+    transform: translateX(-50%);
+    width: min(92%, 420px);
+    min-width: unset;
+    padding: 8px 0;
+  opacity: 1;
+
+    border-radius: 10px;
+    box-shadow: none;
+    background: #000; /* solid black */
+    border: 1px solid #000;
+    z-index: 99999999; /* ensure it's above everything */
+  }
+
+  .menu-dropdown div {
+    padding: 12px 16px; /* larger touch targets */
+    background: #000; /* keep items opaque */
+  }
+
+  .menu-dropdown div:hover {
+    background: #111; /* opaque hover */
+  }
+}
+
+.menu-dropdown div {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #dcdcdc;
+}
+
+.menu-dropdown div:hover {
+  background: #111; /* opaque hover color */
+}
+
+.menu-dropdown div:last-child:hover {
+  color: #ff4747;
+}
