@@ -151,7 +151,7 @@ export default function Sidebar({ onChatSelect, activeChat }) {
         className={`sidebar ${mobileOpen ? 'is-open' : ''}`}
         style={isMobile ? {} : { width: `${width}px` }}
       >
-        <h2 className="sidebar-title">Oliver</h2> 
+        <h2 className="sidebar-title">Olivia</h2> 
         <hr />
         <br />
         <div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
