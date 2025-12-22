@@ -70,7 +70,11 @@ async function loginUser(req, res) {
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
-    res.cookie("token", token);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none"
+    });
 
     return res.status(200).json({
       message: "user logged in succesfully",
@@ -92,7 +96,11 @@ async function loginUser(req, res) {
 
 async function logoutUser(req, res) {
   try {
-    res.clearCookie("token");
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none"
+    });
 
     return res.status(200).json({
       message: "Logged out successfully"

@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
 
-export const socket = io("https://olivia-chatbot.onrender.com", {
+const socketBase = import.meta.env.VITE_API_URL || "http://localhost:3000";
+export const socket = io(socketBase, {
   transports: ["websocket"],
   withCredentials: true,
   autoConnect: false
