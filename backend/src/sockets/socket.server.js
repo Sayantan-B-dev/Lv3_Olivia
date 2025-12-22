@@ -49,6 +49,7 @@ function initSocketServer(httpServer) {
       try {
         if (!payload.chat || payload.chat.length < 20) return;
 
+        // save user message
         const userMessage = await messageModel.create({
           chat: payload.chat,
           user: socket.user._id,
@@ -56,49 +57,56 @@ function initSocketServer(httpServer) {
           content: payload.content
         });
 
+        // update chat last active
         await chatModel.findByIdAndUpdate(payload.chat, {
           lastActivity: Date.now()
         });
 
-        // const memory = await queryMemory({
-        //   query: payload.content,
-        //   limit: 5,
-        //   filter: { user: socket.user._id }
-        // });
+        // pull memory hits (LTM)
+        const memory = await queryMemory({
+          query: payload.content,
+          limit: 5,
+          filter: { user: socket.user._id }
+        });
 
-        // const chatHistory = await messageModel
-        //   .find({ chat: payload.chat })
-        //   .sort({ createdAt: 1 })
-        //   .lean();
+        // pull STM → last 10 messages only (NOT full chat)
+        const chatHistory = await messageModel
+          .find({ chat: payload.chat })
+          .sort({ createdAt: -1 }) // newest first
+          .limit(10)
+          .lean();
 
-        // const stm = chatHistory.map(m => ({
-        //   role: m.role,
-        //   parts: [{ text: m.content }]
-        // }));
+        // reverse to chronological order
+        const stm = chatHistory.reverse().map(m => ({
+          role: m.role,
+          parts: [{ text: m.content }]
+        }));
 
-        // const ltm = memory.length > 0 ? [
-        //   {
-        //     role: "user",
-        //     parts: [{
-        //       text: `Relevant past messages:\n\n${memory
-        //         .map(m => m.fields?.text)
-        //         .join("\n")}`
-        //     }]
-        //   }
-        // ] : [];
+        // format LTM
+        const ltm = memory.length > 0 ? [
+          {
+            role: "user",
+            parts: [{
+              text: `Relevant past memory:\n\n${memory
+                .map(m => m.fields?.text)
+                .join("\n")}`
+            }]
+          }
+        ] : [];
 
-        // const aiResponse = await generateResponse([...ltm, ...stm], socket.user);
-
+        // generate response
         const aiResponse = await generateResponse(
-          [{ role: "user", parts: [{ text: payload.content }] }],
+          [...ltm, ...stm],
           socket.user
         );
 
+        // send reply
         socket.emit("ai-response", {
           chat: payload.chat,
           content: aiResponse
         });
 
+        // save ai message
         const aiMessage = await messageModel.create({
           chat: payload.chat,
           user: socket.user._id,
@@ -106,22 +114,25 @@ function initSocketServer(httpServer) {
           content: aiResponse
         });
 
-        // await createMemory({
-        //   metadata: { chat: payload.chat, user: socket.user._id },
-        //   text: payload.content,
-        //   messageId: userMessage.id
-        // });
+        // save user message to vector DB
+        await createMemory({
+          metadata: { chat: payload.chat, user: socket.user._id },
+          text: payload.content,
+          messageId: userMessage.id
+        });
 
-        // await createMemory({
-        //   metadata: { chat: payload.chat, user: socket.user._id },
-        //   text: aiResponse,
-        //   messageId: aiMessage.id
-        // });
+        // save AI message to vector DB
+        await createMemory({
+          metadata: { chat: payload.chat, user: socket.user._id },
+          text: aiResponse,
+          messageId: aiMessage.id
+        });
 
       } catch (err) {
         console.log("[SOCKET ERROR]:", err.message);
       }
     });
+
 
   });
 
