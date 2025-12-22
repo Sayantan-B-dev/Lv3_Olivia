@@ -48,13 +48,6 @@
     opacity: 1;
   }
 
-  /* Make the title look like a dropdown trigger */
-  .sidebar-title{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-
   .sidebar-toggle{
     display:none; /* hidden on desktop */
   }
@@ -135,7 +128,64 @@
 .sidebar-title {
   font-size: 20px;
   font-weight: bold;
-  margin-bottom: 20px;
+}
+
+/* Nav top: title + small logout for mobile */
+.nav-top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  justify-items: center;
+  padding: auto;
+  gap: 10px;
+  margin-bottom: 10px;
+
+}
+
+.nav-logout{
+  display: none; /* shown on mobile */
+  background: transparent;
+  color: #dcdcdc;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.nav-logout:hover{ background: rgba(255,255,255,0.02); }
+
+/* Show nav-logout on mobile and hide bottom logout there */
+@media (max-width: 800px){
+  .nav-logout{ display: inline-flex; align-items:center; }
+  .logout{ display: none; }
+}
+
+@media (min-width: 801px){
+  .nav-logout{ display: none; }
+}
+
+/* Container inside sidebar (no inline styles) */
+.sidebar-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* When a chat menu opens, allow the chat list to expand and allow overflow so dropdowns aren't clipped */
+.sidebar.has-open-menu .chat-list {
+  max-height: 80vh;
+  overflow: visible;
+}
+
+.sidebar.has-open-menu .logout {
+  opacity: 1;
+  max-height: none;
+}
+
+/* Ensure dropdowns are above everything */
+.menu-dropdown {
+  z-index: 99999999;
 }
 
 .nav-list {
@@ -206,11 +256,113 @@
   transform: translateY(0);
 }
 
+.chat-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  margin-top: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.chat-list-title {
+  font-weight: 600;
+  color: #e8e8e8;
+  font-size: 14px;
+}
+
+.chat-count {
+  color: #bdbdbd;
+  font-weight: 500;
+  font-size: 13px;
+  margin-left: 6px;
+}
+
+.chat-list-toggle{
+  background: transparent;
+  border: none;
+  color: #dcdcdc;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.chat-list-toggle:hover{ background: rgba(255,255,255,0.02); }
+
 .chat-list {
-  margin-top: 15px;
-  max-height: 50vh;
+  margin-top: 10px;
+  /* Fill available vertical space in the sidebar and scroll if needed */
+  flex: 1 1 auto;
   overflow-y: auto;
-  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 8px;
+  padding-bottom: 6px; /* spacing so last item isn't hidden behind footer */
+}
+
+/* Collapsed state: hide gracefully */
+.chat-list.collapsed {
+  max-height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0;
+  transition: max-height 0.22s ease, opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.chat-list.collapsed + .logout {
+  opacity: 1;
+}
+
+/* Ensure header stays visible on overlay mobile */
+.sidebar.is-open .chat-list-header{
+  position: sticky;
+  top: 72px;
+  background: transparent;
+  z-index: 2;
+}
+
+/* Ensure chat items don't collapse or overlap */
+.chat-list .chat-item {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Desktop: limit height but allow grow while preserving footer */
+@media (min-width: 801px) {
+  .sidebar-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .chat-list {
+    max-height: calc(100vh - 220px);
+  }
+}
+
+/* Mobile: when sidebar opens as overlay, make chat list scrollable and prevent overlap */
+@media (max-width: 800px) {
+  .sidebar.is-open {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar.is-open .sidebar-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .sidebar.is-open .chat-list {
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+  }
+
+  .sidebar.is-open .logout {
+    margin-top: 12px;
+  }
 }
 
 .new-chat-button {

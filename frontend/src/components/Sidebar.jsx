@@ -22,6 +22,24 @@ export default function Sidebar({ onChatSelect, activeChat }) {
   const [targetChatTitle, setTargetChatTitle] = useState("");
   const [tempName, setTempName] = useState("");
 
+  // track which chat menu is currently open (detail is the chat._id or null)
+  const [menuOpenId, setMenuOpenId] = useState(null);
+
+  // Show/hide chat list with persistent preference
+  const [chatListOpen, setChatListOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem('chatListOpen');
+      return v === null ? true : v === '1';
+    } catch (e) {
+      return true;
+    }
+  });
+
+  // Persist preference when it changes
+  useEffect(() => {
+    try { localStorage.setItem('chatListOpen', chatListOpen ? '1' : '0'); } catch (e) {}
+  }, [chatListOpen]);
+
   const cap = str =>
     str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
 
@@ -83,7 +101,7 @@ export default function Sidebar({ onChatSelect, activeChat }) {
         setMobileOpen(false);
       }
     }
-    function handleKey(e){
+    function handleKey(e) {
       if (!mobileOpen) return;
       if (e.key === 'Escape') setMobileOpen(false);
     }
@@ -97,6 +115,28 @@ export default function Sidebar({ onChatSelect, activeChat }) {
       document.removeEventListener('keydown', handleKey);
     };
   }, [mobileOpen]);
+
+  // Track chat-menu-open events so the sidebar can expand/allow overflow when a popup menu opens
+  useEffect(() => {
+    function handleMenuOpen(e) {
+      setMenuOpenId(e?.detail || null);
+    }
+
+    function handleWindowClick(e) {
+      // If click is outside sidebar, clear menu open state so sidebar can collapse
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setMenuOpenId(null);
+      }
+    }
+
+    window.addEventListener('chat-menu-open', handleMenuOpen);
+    window.addEventListener('click', handleWindowClick);
+
+    return () => {
+      window.removeEventListener('chat-menu-open', handleMenuOpen);
+      window.removeEventListener('click', handleWindowClick);
+    };
+  }, []);
 
   // Helper to close sidebar when a chat is selected on mobile
   function handleSelect(id) {
@@ -148,30 +188,39 @@ export default function Sidebar({ onChatSelect, activeChat }) {
       {/* SIDEBAR MAIN */}
       <div
         ref={sidebarRef}
-        className={`sidebar ${mobileOpen ? 'is-open' : ''}`}
+        className={`sidebar ${mobileOpen ? 'is-open' : ''} ${menuOpenId ? 'has-open-menu' : ''}`}
         style={isMobile ? {} : { width: `${width}px` }}
       >
-        <h2 className="sidebar-title">Olivia</h2> 
-        <hr />
-        <br />
-        <div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+        <div className="sidebar-body">
+          <div className="nav-top">
+            <div className="sidebar-title">Olivia</div>
+            <button className="nav-logout" onClick={logout} aria-label="Logout">Logout</button>
+          </div>
+          <hr />
+          <br />
           <span className="username">
             {cap(user?.fullName?.firstName)} {cap(user?.fullName?.lastName)}
             <p className="email">{user?.email}</p>
           </span>
 
-            <button className="new-chat-button" onClick={createChat}>
-              ＋New Chat
+          <button className="new-chat-button" onClick={createChat}>
+            ＋New Chat
+          </button>
+
+          {/* Chat list header with count and collapse toggle */}
+          <div className="chat-list-header">
+            <div className="chat-list-title">All Chats <span className="chat-count">({chats.length})</span></div>
+            <button
+              className="chat-list-toggle"
+              onClick={() => setChatListOpen(s => { const v = !s; try { localStorage.setItem('chatListOpen', v ? '1' : '0'); } catch(e) {} return v; })}
+              aria-expanded={chatListOpen}
+              aria-label={chatListOpen ? 'Collapse chat list' : 'Expand chat list'}
+            >
+              {chatListOpen ? '▾' : '▸'}
             </button>
+          </div>
 
-            {/* Mobile toggle placed under New Chat - full-width on small screens (render only on mobile) */}
-            {isMobile && (
-              <button type="button" className="sidebar-toggle" aria-expanded={mobileOpen} onClick={() => setMobileOpen(s => !s)}>
-                {mobileOpen ? '✕ Close' : '▾ Chats'}
-              </button>
-            )}
-
-          <div className="chat-list">
+          <div className={`chat-list ${chatListOpen ? '' : 'collapsed'}`}>
             {chats.map(chat => (
               <ChatItem
                 key={chat._id}
@@ -182,33 +231,32 @@ export default function Sidebar({ onChatSelect, activeChat }) {
                 onDelete={requestDelete}
               />
             ))}
-
-
           </div> 
 
         </div>
 
         <div className="logout" onClick={logout}>
-          🚪 Logout
+          Logout
         </div>
 
-        {modalMode && (
-          <ChatActionsModal
-            mode={modalMode}
-            chatTitle={targetChatTitle}
-            value={tempName}
-            onChange={setTempName}
-            onConfirm={modalMode === "rename" ? confirmRename : confirmDelete}
-            onCancel={closeModal}
-          />
-        )}
-      </div>
 
-      {/* RESIZE HANDLE */}
-      <div
-        className="sidebar-resizer"
-        onMouseDown={startResize}
-      />
+      {modalMode && (
+        <ChatActionsModal
+          mode={modalMode}
+          chatTitle={targetChatTitle}
+          value={tempName}
+          onChange={setTempName}
+          onConfirm={modalMode === "rename" ? confirmRename : confirmDelete}
+          onCancel={closeModal}
+        />
+      )}
+    </div >
+
+      {/* RESIZE HANDLE */ }
+      < div
+  className = "sidebar-resizer"
+  onMouseDown = { startResize }
+    />
     </>
   );
 }
