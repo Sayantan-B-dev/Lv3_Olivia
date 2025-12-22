@@ -10,5 +10,5 @@ connectDB()
 initSocketServer(httpServer)
 
 httpServer.listen(port,()=>{
-    console.log("server on 3000")
+    console.log("server on ",port)
 })
