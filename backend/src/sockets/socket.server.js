@@ -60,34 +60,39 @@ function initSocketServer(httpServer) {
           lastActivity: Date.now()
         });
 
-        const memory = await queryMemory({
-          query: payload.content,
-          limit: 5,
-          filter: { user: socket.user._id }
-        });
+        // const memory = await queryMemory({
+        //   query: payload.content,
+        //   limit: 5,
+        //   filter: { user: socket.user._id }
+        // });
 
-        const chatHistory = await messageModel
-          .find({ chat: payload.chat })
-          .sort({ createdAt: 1 })
-          .lean();
+        // const chatHistory = await messageModel
+        //   .find({ chat: payload.chat })
+        //   .sort({ createdAt: 1 })
+        //   .lean();
 
-        const stm = chatHistory.map(m => ({
-          role: m.role,
-          parts: [{ text: m.content }]
-        }));
+        // const stm = chatHistory.map(m => ({
+        //   role: m.role,
+        //   parts: [{ text: m.content }]
+        // }));
 
-        const ltm = memory.length > 0 ? [
-          {
-            role: "user",
-            parts: [{
-              text: `Relevant past messages:\n\n${memory
-                .map(m => m.fields?.text)
-                .join("\n")}`
-            }]
-          }
-        ] : [];
+        // const ltm = memory.length > 0 ? [
+        //   {
+        //     role: "user",
+        //     parts: [{
+        //       text: `Relevant past messages:\n\n${memory
+        //         .map(m => m.fields?.text)
+        //         .join("\n")}`
+        //     }]
+        //   }
+        // ] : [];
 
-        const aiResponse = await generateResponse([...ltm, ...stm], socket.user);
+        // const aiResponse = await generateResponse([...ltm, ...stm], socket.user);
+
+        const aiResponse = await generateResponse(
+          [{ role: "user", parts: [{ text: payload.content }] }],
+          socket.user
+        );
 
         socket.emit("ai-response", {
           chat: payload.chat,
@@ -101,22 +106,23 @@ function initSocketServer(httpServer) {
           content: aiResponse
         });
 
-        await createMemory({
-          metadata: { chat: payload.chat, user: socket.user._id },
-          text: payload.content,
-          messageId: userMessage.id
-        });
+        // await createMemory({
+        //   metadata: { chat: payload.chat, user: socket.user._id },
+        //   text: payload.content,
+        //   messageId: userMessage.id
+        // });
 
-        await createMemory({
-          metadata: { chat: payload.chat, user: socket.user._id },
-          text: aiResponse,
-          messageId: aiMessage.id
-        });
+        // await createMemory({
+        //   metadata: { chat: payload.chat, user: socket.user._id },
+        //   text: aiResponse,
+        //   messageId: aiMessage.id
+        // });
 
       } catch (err) {
         console.log("[SOCKET ERROR]:", err.message);
       }
     });
+
   });
 
   return io;
