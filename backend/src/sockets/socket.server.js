@@ -46,92 +46,88 @@ function initSocketServer(httpServer) {
   io.on("connection", (socket) => {
 
     socket.on("ai-message", async (payload) => {
-      try {
-        if (!payload.chat || payload.chat.length < 20) return;
+  try {
+    if (!payload.chat || payload.chat.length < 20) return;
 
-        // save user message
-        const userMessage = await messageModel.create({
-          chat: payload.chat,
-          user: socket.user._id,
-          role: "user",
-          content: payload.content
-        });
-
-        // update chat last active
-        await chatModel.findByIdAndUpdate(payload.chat, {
-          lastActivity: Date.now()
-        });
-
-        // pull memory hits (LTM)
-        const memory = await queryMemory({
-          query: payload.content,
-          limit: 5,
-          filter: { user: socket.user._id }
-        });
-
-        // pull STM → last 10 messages only (NOT full chat)
-        const chatHistory = await messageModel
-          .find({ chat: payload.chat })
-          .sort({ createdAt: -1 }) // newest first
-          .limit(10)
-          .lean();
-
-        // reverse to chronological order
-        const stm = chatHistory.reverse().map(m => ({
-          role: m.role,
-          parts: [{ text: m.content }]
-        }));
-
-        // format LTM
-        const ltm = memory.length > 0 ? [
-          {
-            role: "user",
-            parts: [{
-              text: `Relevant past memory:\n\n${memory
-                .map(m => m.fields?.text)
-                .join("\n")}`
-            }]
-          }
-        ] : [];
-
-        // generate response
-        const aiResponse = await generateResponse(
-          [...ltm, ...stm],
-          socket.user
-        );
-
-        // send reply
-        socket.emit("ai-response", {
-          chat: payload.chat,
-          content: aiResponse
-        });
-
-        // save ai message
-        const aiMessage = await messageModel.create({
-          chat: payload.chat,
-          user: socket.user._id,
-          role: "model",
-          content: aiResponse
-        });
-
-        // save user message to vector DB
-        await createMemory({
-          metadata: { chat: payload.chat, user: socket.user._id },
-          text: payload.content,
-          messageId: userMessage.id
-        });
-
-        // save AI message to vector DB
-        await createMemory({
-          metadata: { chat: payload.chat, user: socket.user._id },
-          text: aiResponse,
-          messageId: aiMessage.id
-        });
-
-      } catch (err) {
-        console.log("[SOCKET ERROR]:", err.message);
-      }
+    // save user message
+    const userMessage = await messageModel.create({
+      chat: payload.chat,
+      user: socket.user._id,
+      role: "user",
+      content: payload.content
     });
+
+    // update chat last active
+    await chatModel.findByIdAndUpdate(payload.chat, {
+      lastActivity: Date.now()
+    });
+
+    // ===== MEMORY DISABLED =====
+    // const memory = await queryMemory({
+    //   query: payload.content,
+    //   limit: 5,
+    //   filter: { user: socket.user._id }
+    // });
+
+    // ===== LTM DISABLED =====
+    // const ltm = memory.length > 0 ? [
+    //   {
+    //     role: "user",
+    //     parts: [{
+    //       text: `Relevant past memory:\n\n${memory
+    //         .map(m => m.fields?.text)
+    //         .join("\n")}`
+    //     }]
+    //   }
+    // ] : [];
+
+    // ===== STM ONLY (last 10 messages) =====
+    const chatHistory = await messageModel
+      .find({ chat: payload.chat })
+      .sort({ createdAt: -1 }) 
+      .limit(10)
+      .lean();
+
+    const stm = chatHistory.reverse().map(m => ({
+      role: m.role,
+      parts: [{ text: m.content }]
+    }));
+
+    // AI reply using STM only
+    const aiResponse = await generateResponse(stm, socket.user);
+
+    // send reply
+    socket.emit("ai-response", {
+      chat: payload.chat,
+      content: aiResponse
+    });
+
+    // save ai message
+    const aiMessage = await messageModel.create({
+      chat: payload.chat,
+      user: socket.user._id,
+      role: "model",
+      content: aiResponse
+    });
+
+    // ===== MEMORY WRITE DISABLED =====
+    // await createMemory({
+    //   metadata: { chat: payload.chat, user: socket.user._id },
+    //   text: payload.content,
+    //   messageId: userMessage.id
+    // });
+
+    // await createMemory({
+    //   metadata: { chat: payload.chat, user: socket.user._id },
+    //   text: aiResponse,
+    //   messageId: aiMessage.id
+    // });
+
+  } catch (err) {
+    console.log("[SOCKET ERROR]:", err.message);
+  }
+});
+
 
 
   });
