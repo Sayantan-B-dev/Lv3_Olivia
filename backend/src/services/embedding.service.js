@@ -1,39 +1,52 @@
-const { pipeline, Tensor } = require("@xenova/transformers");
+const { Pinecone } = require('@pinecone-database/pinecone');
 
-let embedder = null;
+const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 
-async function generateVector(input) {
+const cohortChatGPTIndex = pc.index("cohort-chat-gpt");
+
+async function createMemory({ chat, user, text, messageId }) {
   try {
-    if (!embedder) {
-      embedder = await pipeline(
-        "feature-extraction",
-        "Xenova/all-mpnet-base-v2"
-      );
-      console.log("Embedding model loaded.");
-    }
+    await cohortChatGPTIndex.namespace(user.toString()).upsertRecords([
+      {
+        _id: messageId.toString(),
+        chunk_text: text,
+        chat: chat,
+        user: user
+      }
+    ]);
 
-    if (!input || typeof input !== "string" || !input.trim()) {
-      console.error("Invalid embedding input:", input);
-      return null;
-    }
-
-    // Run embedding
-    const output = await embedder(input, { pooling: 'mean' });
-
-    // 'pooling: mean' returns [768]
-    const vector = Array.from(output.data);
-
-    if (vector.length !== 768) {
-      console.error("Unexpected vector length:", vector.length);
-      return null;
-    }
-
-    return vector;
+    console.log("[MEMORY] Saved →", messageId.toString());
 
   } catch (err) {
-    console.error("Embedding error:", err.message);
-    return null;
+    console.error("[PINECONE] MEMORY UPSERT ERROR:", err);
+  }
+}
+async function queryMemory({ text, user, limit = 5 }) {
+  try {
+    const ns = cohortChatGPTIndex.namespace(user.toString());
+
+    const results = await ns.searchRecords({
+      query: {
+        topK: limit,
+        inputs: { text }
+      }
+    });
+
+    const hits = results?.result?.hits || [];
+
+    console.log("[MEMORY] hits:", hits.length);
+
+    return hits.map(hit => ({
+      id: hit.id,
+      score: hit.score,
+      metadata: hit.fields
+    }));
+
+  } catch (err) {
+    console.error("[PINECONE] MEMORY QUERY ERROR:", err);
+    return [];
   }
 }
 
-module.exports = { generateVector };
+module.exports = { createMemory, queryMemory };
+

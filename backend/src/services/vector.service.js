@@ -1,29 +1,50 @@
 const { Pinecone } = require('@pinecone-database/pinecone');
 
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+const pc = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY,
+});
 
-const cohortChatGPTIndex = pc.Index("cohort-chat-gpt");
+const index = pc.Index("cohort-chat-gpt").namespace("default");
 
-async function createMemory({ vectors, metadata, messageId }) {
-  return await cohortChatGPTIndex.upsert([{
-    id: messageId,
-    values: vectors,
-    metadata
-  }]);
+// store memory
+async function createMemory({ metadata, text, messageId }) {
+  try {
+    if (!text) return;
+
+    const records = [
+      {
+        _id: String(messageId),
+        text,
+        ...metadata
+      }
+    ];
+
+    await index.upsertRecords(records);
+
+  } catch (err) {
+    console.error("[PINECONE] Memory upsert error:", err.message);
+  }
 }
 
-async function queryMemory({ queryVector, limit = 5, filter }) {
-  const data = await cohortChatGPTIndex.query({
-    vector: queryVector,
-    topK: limit,
-    filter: filter || undefined,
-    includeMetadata: true
-  });
+// search memory
+async function queryMemory({ query, limit = 5, filter }) {
+  try {
+    if (!query) return [];
 
-  return data.matches;
+    const result = await index.searchRecords({
+      query: {
+        topK: limit,
+        inputs: { text: query }
+      },
+      filter
+    });
+
+    return result.result?.hits || [];
+
+  } catch (err) {
+    console.error("[PINECONE] Query error:", err.message);
+    return [];
+  }
 }
 
-module.exports = {
-  createMemory,
-  queryMemory
-};
+module.exports = { createMemory, queryMemory };
