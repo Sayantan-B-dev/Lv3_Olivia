@@ -1,143 +1,231 @@
-# Olivia
+# CohortGPT
 
-A lightweight chat assistant application (CohortGPT) that combines a React + Vite frontend with an Express + Node backend, using vector search (Pinecone), embedding and generative APIs for intelligent responses, and real-time features via Socket.IO. This repository contains both the frontend and backend code to build, run and deploy the app.
+CohortGPT is a full stack real time AI chat application built with a React frontend and a Node.js backend. It combines authentication, real time messaging via sockets, and AI powered responses using embeddings and vector search.
 
----
-
-## 🚀 Features
-
-- **User authentication** (register, login, logout)
-- **Chat management**: create, list, rename, delete chats
-- **Message storage** with MongoDB and vector indexing (Pinecone)
-- **Embeddings & Generative** calls via GROQ / Cohere / external models
-- **Real-time communication** using Socket.IO
-- Easy local development with separate frontend and backend servers
+The project is structured as a clean frontend backend split, with both sides running independently but communicating over HTTP and WebSocket.
 
 ---
 
-## 🧭 Architecture Overview
+## High level overview
 
-- Frontend: React (Vite) — SPA UI, socket client, API client
-- Backend: Node.js, Express — REST API, auth, socket server
-- Database: MongoDB (Mongoose)
-- Vector Search: Pinecone
-- Real-time: Socket.IO
+Frontend  
+- Built with React and Vite  
+- Handles authentication UI, chat interface, sidebar, and modals  
+- Communicates with backend using Axios and Socket.IO  
 
----
+Backend  
+- Built with Node.js and Express  
+- Handles authentication, chat logic, AI services, and sockets  
+- Uses MongoDB for persistence and Pinecone for vector search  
+- Integrates LLM responses through Groq  
 
-## ⚙️ Tech Stack
-
-- Node.js (>=18)
-- Express
-- React + Vite
-- MongoDB (Mongoose)
-- Pinecone
-- Socket.IO
-- GROQ / Cohere / Transformer models (configurable)
+Both frontend and backend are run separately but follow the same dev command pattern.
 
 ---
 
-## 💻 Quick Start
+![](./frontend/src/assets/sample.png)
 
-### Prerequisites
+---
+## Folder structure
 
-- Node.js 18+ and npm
-- MongoDB instance (local or cloud)
-- Pinecone account and API key
-- (Optional) GROQ / other model API keys
+```text
+.
+├── frontend
+│   ├── src
+│   │   ├── api
+│   │   │   └── axiosClient.js
+│   │   ├── components
+│   │   │   ├── ChatActionsModal.jsx
+│   │   │   ├── ChatArea.jsx
+│   │   │   ├── ChatItem.jsx
+│   │   │   └── Sidebar.jsx
+│   │   ├── pages
+│   │   │   ├── Home.jsx
+│   │   │   ├── Login.jsx
+│   │   │   └── Register.jsx
+│   │   ├── styles
+│   │   │   ├── globals.css
+│   │   │   ├── login.css
+│   │   │   ├── register.css
+│   │   │   ├── home.css
+│   │   │   ├── modal.css
+│   │   │   ├── chatarea.css
+│   │   │   └── sidebar.css
+│   │   ├── socket.js
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── vite.config.js
+│   ├── package.json
+│   └── README.md
+│
+├── backend
+│   ├── src
+│   │   ├── db
+│   │   │   ├── db.js
+│   │   │   └── pinecone.js
+│   │   ├── models
+│   │   │   ├── user.model.js
+│   │   │   ├── chat.model.js
+│   │   │   └── message.model.js
+│   │   ├── routes
+│   │   │   ├── auth.routes.js
+│   │   │   └── chat.routes.js
+│   │   ├── controller
+│   │   │   ├── auth.controller.js
+│   │   │   └── chat.controller.js
+│   │   ├── middlewares
+│   │   │   └── auth.middleware.js
+│   │   ├── services
+│   │   │   ├── embedding.service.js
+│   │   │   ├── vector.service.js
+│   │   │   └── groq.service.js
+│   │   ├── sockets
+│   │   │   ├── socket.server.js
+│   │   │   └── socket.backup.js
+│   │   └── app.js
+│   ├── server.js
+│   ├── test-embed.js
+│   ├── package.json
+│   └── .env.example
+│
+└── README.md
+````
 
-### Backend
+---
 
-1. Open a terminal and install dependencies:
+## Tech stack
+
+Frontend
+
+* React
+* Vite
+* Axios
+* Socket.IO Client
+* React Router
+
+Backend
+
+* Node.js
+* Express
+* MongoDB with Mongoose
+* Socket.IO
+* JWT authentication
+* Pinecone vector database
+* Groq LLM integration
+
+---
+
+## Environment variables
+
+Create a `.env` file inside the backend folder.
+
+```env
+MONGO_URL=mongodb://localhost:27017/CohortGPT
+JWT_SECRET=your_jwt_secret
+
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama-3.1-8b-instant
+
+PINECONE_API_KEY=your_pinecone_api_key
+
+FRONTEND_URLS=http://localhost:5173
+NODE_ENV=production
+```
+
+Create a `.env` file inside the frontend folder if needed.
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+---
+
+## Installation
+
+Clone the repository first.
+
+```bash
+git clone <repository-url>
+cd <repository-name>
+```
+
+---
+
+## Running the backend
 
 ```bash
 cd backend
 npm install
-```
-
-2. Create a `.env` file in `backend/` with the following variables (example):
-
-```bash
-PORT=3000
-MONGO_URL=mongodb://localhost:27017/olivia
-JWT_SECRET=your_jwt_secret
-PINECONE_API_KEY=your_pinecone_api_key
-GROQ_API_KEY=your_groq_api_key
-GROQ_MODEL=llama-3.1-8b-instant  # optional
-FRONTEND_URLS=http://localhost:5173
-NODE_ENV=development
-```
-
-3. Start the backend in development:
-
-```bash
 npm run dev
 ```
 
-Start the production server with:
+Backend runs on port 3000 by default.
 
-```bash
-npm start
-```
+---
 
-### Frontend
+## Running the frontend
 
-1. Install dependencies:
+Open a new terminal.
 
 ```bash
 cd frontend
 npm install
-```
-
-2. Create a `.env` in `frontend/` or set environment variables for Vite:
-
-```bash
-VITE_API_URL=http://localhost:3000
-```
-
-3. Run the frontend dev server:
-
-```bash
 npm run dev
 ```
 
-Build for production:
-
-```bash
-npm run build
-npm run preview
-```
+Frontend runs on port 5173 and connects to the backend via `VITE_API_URL`.
 
 ---
 
-## 📡 API & Socket Notes
+## How it works
 
-- Auth routes: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/logout`
-- Chats: `POST /api/chats`, `GET /api/chats`, `GET /api/chats/:chatId/messages`, `PUT /api/chats/:chatId/rename`, `DELETE /api/chats/:chatId`
-- Socket.IO client connects to `VITE_API_URL` and uses credentials (cookies) for auth; ensure `FRONTEND_URLS` is set in backend to allow CORS/sockets.
-
----
-
-## 🧪 Tests & Utilities
-
-- Backend: `npm run test-embed` (quick embedding test script)
-- Frontend linting: `npm run lint` (from `frontend/`)
+* Users authenticate using JWT based authentication
+* Frontend communicates with backend REST APIs using Axios
+* Real time chat updates are handled via Socket.IO
+* Messages are embedded and stored using vector services
+* Relevant context is retrieved using Pinecone
+* AI responses are generated using the Groq service
+* Chat state updates instantly across connected clients
 
 ---
 
-## 👩‍💻 Contributing
+## Scripts reference
 
-Contributions, bug reports and improvements are welcome. Please open issues or pull requests and add clear descriptions and steps to reproduce.
+Backend
+
+* `npm run dev` runs the backend with nodemon
+* `npm start` runs backend in production mode
+* `npm run test-embed` tests embedding logic
+
+Frontend
+
+* `npm run dev` starts Vite dev server
+* `npm run build` builds production bundle
+* `npm run preview` previews production build
+* `npm run lint` runs ESLint
 
 ---
 
-## 📄 License
+## Notes
 
-This project is provided under the **MIT License**. See the `LICENSE` file for details.
+* Both frontend and backend are intentionally decoupled
+* Socket logic is isolated under the sockets directory
+* AI related logic is isolated under services
+* Designed for local development first, production ready later
 
 ---
 
-## ✉️ Contact
+## Possible improvements
+- Markdown rendering
+- Better styling
 
-If you have questions, reach out to the project maintainer listed in `frontend/package.json`.
+---
 
+## Author
+
+Sayantan Bharati
+
+---
+
+This project focuses on real world architecture, clean separation of concerns, and practical AI integration rather than demo level implementations.
